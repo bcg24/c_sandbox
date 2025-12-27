@@ -2,7 +2,7 @@
 
 ## Launching WSL:
 in cmd CLI: wsl
-cd cSandbox
+cd ~/cSandbox
 code . to open in VSCode
 
 ## Basic File Commands
@@ -74,5 +74,5 @@ Use "sp??t". The first '?' matches the 'a' in "spat", but the second '?' can't m
  
  ** groups : returns the groups you are part of
  
- 
+
  

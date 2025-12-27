@@ -1,0 +1,10 @@
+solid testPyramid
+facet normal n_i n_j n_k 
+%
+    outer loop
+        vertex v1_x v1_y v1_z
+        vertex v2_x v2_y v2_z
+        vertex v3_x v3_y v3_z
+    endloop
+endfacet
+endsolid testPyramid
