@@ -522,4 +522,258 @@ expression1?expression2:expression3
 
 if expression 1 is true, then the result of the whole expression is expression2, otherwise it is expression3. depending on the value of expression1, only one of the expressions will be evaluated.
 
-The types of the expressions and the whole expressionl.
+The types of the expressions and the whole expression.
+
+## Exercises
+
+1. The type and value of the result of relational values is integer.
+2. The type and value of the logical operators is integer.
+3. What is ...
+4. Break is useful in switch statments to make them mutually exclusive.
+5. Continue only goes to the next iteration from within loops.
+6. When using continue in a while statment, it moght skip the counter update.
+7. I am not sure, but you definitely can't use goto
+
+## Chapter 4
+
+# Types of Functions
+
+What is called a procedure in other languages is simply a function that returns no value, which should be declared to return void.
+
+Functions can't reuturn arrays and functions, but can return anything else like pointers and structures. All functions are recursive, meaning they can call themselves from inside itself.
+
+# Declaring Functions
+
+For a function, it turns from a declaration to a definition when you provide a function body. Within a function, the names used inside the function are its paramenter, and the arguments are what is used when the functino is called; they're the values that the formal parameters will have on entry to the function.
+
+Parameter and argument are somewhat interchangable terminology.
+
+Using an undeclared function is allowed, but all functions should be declared before their use in practice. 
+
+What makes a declaration a function prototype is adding information about the type of the arguments -- you don't even need to specify the names.
+
+varargin is declared: 
+
+void f_name (int,double,...);
+
+If a function is called with different argument types that its prototype, then they are converted to the types of the formal argument 'as if by assignment'.
+
+The only time that you might not use a prototype to declare the type and number of arguments to a function is if you are using a variable number of arguments.
+
+If there is no prototype, then the defaul promotions are applied. If the nargs differs from the formal parameters, undefined behavior. 
+
+# Compound statements and declarations
+
+Variables in a compound statement can have the same name as a variable outside the statement. C restricts variable declarations to the head of the compound statement -- once any other type of statementment is encountered, declarations are not allowed after it.
+
+Scope of a nmae is the range in which it has meaning. Starts from where it is mentioned and continues from there to the end of the block in which it was declared. If it is outside any function, then its meaning persists to the end of the file. If it is inside a function, then its scope ends at the end of the block.
+
+The scope of a name can be suspended by redeclaring in a sub-block.
+
+main(){}
+int i;
+f () {}
+f2() {}
+
+f and f2 can use i, but main can't. 
+
+The intitialization of the formal parameters is the last time any communication occurs between the caller and called function, except for the return value.
+
+# Call by reference
+
+A function can change a pointer, so in this way, it can change a value in the caller.
+
+# Recursion
+
+Each call of a function creates its own copy of the functions parameters. Including the keyword auto in the variable declaration means 'automaticaly allocated':
+
+main(){
+    auto int var_name;
+}
+
+Which means that the variables are allocated on function entry and freed on function return. The auto keyword is never declared because it is the default behavior for internal declarations and invalid externally. If a declared variable isn't given an explicit initial value, then the use of the variable before assignment leads to undefined behavior.
+
+ungetc allows the last character read by getchar to be 'unread' and become the next character to be read.
+
+## Linkage (p. 119)
+
+Skipping this because the book told me to for now.
+
+# Exercises
+
+Skipping 2-4 for now, did 1 and 5
+
+## Chapter 5
+
+Array declaration: double ar[100];
+Has indices 0-99
+
+The size of an array has to be able to be figured out at compile time, not at run time, which means, for example, that you can't have a function that uses its argument as the size in a variable declaration. That doesn't mean that you can't have a integer variable as the size of the array, the value of it just has to be able to be figured out at compile time. Maybe this has been changed with more recent compilers.
+
+# Multidimensional Arrays
+
+int three_dee[5][4][2];
+int t_d[2][3];
+
+In the three_dee example, the hierarchy is left to right, so the first declaration is a five element array with members are each a four element array whose members are an array of two ints. 
+
+So t_d[0] contains t_d[0][0], t_d[0][1], t_d[0][2]. Technically, you could access t_d[1][0] with t_d[0][3], because C has no array boound checking.
+
+# 3. Pointers
+
+The type preceding the asterisk in a pointer is in reference to the type that the pointer is pointing to, therefore:
+
+int ar[5], *ip;
+
+declares an array of ints and a pointer to an int, which is still uninitialized. 
+
+ip = &ar[3];
+
+Points to the fourth element of ar. ip is a pointer to int, and *ip refers to the thing being pointed to.
+
+*& effectively cancel each other out. Constants dont have addresses so &1.5 is an error. What pointers do is get around the call-by-value restriction on functions. What this means is that a function doesn't have to return anything -- it can simply write to the address provided to it to make its output accessible outside the function.
+
+It's much more common to used pointers to walk along arrays:
+
+# Arrays and pointers
+
+Using pointer arithmetic, we can add an integral balue to a pointer, resulting in another pointer of the same type. Adding n to an element gives a pointer which points to an elememnt n elements purther along the array that the original pointer that n was added to.
+
+int ar[20], *ip;
+for(ip = &ar[0]; ip < &ar[20]; ip++)
+      *ip = 0;
+
+Even though element 20 is out of bounds, taking its address is legal, but just by one out of bounds and no further. You must not try to access its value.
+
+# Qualified types
+
+Qualifiers can be applied to any declared type to modify its behaviour. If a declaration is prefixed with const, then it can't be changed or else undefined behaviour results. The benefits to doing this are to: 1. help the compiler know not to change them, even through pointers. and 2. help the compiler optimize.
+
+Define is used a lot in array sizes because it wasn't allowed to use const in array sizes in older standards. Use a const whenever you want to debug and for type safety.
+
+const int x = 1;        // x is constant
+const float f = 3.5;    // f is constant
+const char y[10];       // y is an array of 10 constant ints
+                        // don't think about initializing it yet
+
+This qualifier can be applied to pointers either as a pointer to const, or to make a constant pointer.
+
+int i;                          // i is an ordinary int
+const int ci = 1;               // ci is a constant int
+int *pi;                        // pi is a pointer to an int
+const int *pci                  // pc is a pointer to a constant int
+int *const cpi = &i;            // cpi is a constant pointer to an int
+const int *const cpci = &ci;    // cpci is a constant pointer to a constant int
+
+Can't intermix a pointer to a int and a pointer to a constant int. In both, one can change the value of the pointer so that they point to other things, as long as those things are ints and constant ints respectively, but in the case of the pointer to the constant int, you are only allowed to inspect the value that it points to. If the pointers themselves are constant, as in the latter two examples, then you can't change the thing that they point to, that's the whole point, so they need to be initialized. In these examples, a non-constant pointer to a constant is itself not a qualified type, only ci, cpi, and cpci are qualified types.
+
+# Pointer arithmetic
+
+Pointers of the same type can be compared or subtracted as long as they both point in the same array. The difference is the number of array element separating them. As was said before, a pointer to an array is actually a pointer to the first element of the array.
+
+float fa[10], *fp1, *fp2;
+
+fp1 = fp2 = fa;
+
+The difference between fa, which decays to: float * fa = &fa[0]; and &fa is that fa is float (*)[10], which is a pointer to an array of 10 floats. 
+
+When taking the difference of two pointers in an array, the type of the result is implementation defined.
+
+# Void, null, and dubious pointers
+
+Generally, you can't use pointers of different types in the same expression. There is no conversion between them, unlike the arithmetic types.
+
+If you want to force pointers of different types into the same expression, one can use a pointer to void. It can have the value of any other pointer type assigned to it, and can be assigned to any other pointer type.
+
+Sometimes a pointer to nothing might also be useful -- this is where a null pointer comes in. Its useful in the case of an error in a function that returns a pointer.
+
+The two ways of writing a null pointer are 1. integral constant with value zero, or 2. that value converted to type void * with a cast. If the null pointer constant is assigned or compared for equality to any other pointer, then it is first converted to the type of the other pointer. 
+
+Other than assigning 0 to a pointer for the null pointer, the only values that can be assigned to a pointer is another pointer of the same type. 
+
+int *ip;            // declaring a pointer called ip to int
+ip = (int *)6;      // casting the integer 6 as a type "pointer to int" and assigning it to ip
+*ip = 0xFF;         // setting the memory address that ip points to to 255
+
+# 4. Character Handling
+
+Character handling is done by moving characters in arrays "by hand". Setting a value to zero in a character array indicates that you are terminating the string -- the so-called 'null terminator'. It makes it more explicit and readable if '\0' is used.
+
+strcmp works opposite of matlab, returns 0 when the strings are equal. Returns negative if the first string comes before the second, positive if the first string comes after the second.
+
+# Strings
+
+A string is an array of char, terminated by a null. "this is also a string" or characte array, and its the only thing in C where you can declare it at its point of use. Although strings are array of char, the Standard says that attempting to modify them results in undefined behaviour.
+
+Whenever a string in quotes appears, it provides a declaration and a substitute for a name (the array has no name). It make a hidden declaration of a char array, whos contents are intialized to the character values in the string, terminated by a character whose int value is zero (the null terminator). So in this:
+
+"a string"
+
+What's behind the scenes is this:
+
+char secret[9];
+secret[0] = 'a';
+secret[1] = ' ';
+secret[2] = 's';
+secret[3] = 't';
+secret[4] = 'r';
+secret[5] = 'i';
+secret[6] = 'n';
+secret[7] = 'g';
+secret[8] = '0';
+
+Assuming that we can't see the name 'secret' (remember, it doesn't have a name), how can you use it? The string itself is the name, so "a string" 's type is a pointer to the first element of the hidden unnamed character array, so the type is pointer to char.
+
+# Pointers and Increment Operators
+
+++(*p)  ++*p    pre-increment thing pointed to
+(*p)++  (*p)++  post-increment thing pointed to
+*(p++)  *p++    access via pointer, post-increment pointer
+*(++p)  *++p    access via pointer which has already been incremented
+
+TODO: Review the prescedence tables and memorize
+
+
+# Untyped Pointers
+
+I thought that using a pointer to void was how we got pointers from one type to another, but maybe that's just for comparison. Turns out, we can cast pointers from one type to another with the following syntax:
+
+(type *) expression
+
+There are some subtleties to this that I am not delving into now.
+
+There are other scenarios when you want to use a generic pointer, such as in the malloc function, which allocates storage for objects that haven't been declared yet; it passes back a pointer to enough storage for what you specified and then you cast it to what you want:
+
+float *fp;
+fp = (float *)malloc(4);
+
+malloc finds 4 bytes of storage for you and passes back a generic pointer void *
+
+void *malloc();
+float *fp;
+fp = (float *)malloc(4);
+
+Technically, there is no need to cast the malloc output, as we have already specified the type of pointer for the destination, but its done for clarity. On different machines, its hard to tell how much memory to allocate since the size of the various types are implementation-defined -- that's what sizeof is for.
+
+# 5. sizeof and Storage Allocation
+
+The sizeof operator returns the size of its operand in bytes either in unsigned int or long depending on the implementation:
+
+#include <stdlib.h>
+float *fp
+fp = (float *)malloc(sizeof(float));
+
+The parentheses only have to be around the operand if its a type, otherwise the name of the object can be used without them:
+
+#include <stdlib.h>
+int *ip, ar[100];
+ip = (int *)malloc(sizeof ar);
+
+The fundamental unit of storage is the 8 bit/1 byte char:
+
+sizeof(char) = 1
+
+So malloc(10) can hold 10 chars, but malloc(sizeof(int[10])) would be needed to store 10 ints. If malloc can't find enough free space, then a null pointer is returned. stdio.h contains a NULL constant, but a 0 or (void *)0 could be used too.
+
+The fprintf statement takes an extra first argument which says where the output should go: 1. stdout, which is the standard output and 2. stderr, the programs standard error stream
+

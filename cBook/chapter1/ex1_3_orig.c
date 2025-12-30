@@ -4,9 +4,9 @@ main(){
     int ch;
 
     ch = getchar();
-    while(ch != 'a'){
+    while(ch != EOF){
         if(ch != '\n')
-            printf("ch was %c, value %d", ch, ch);
+            printf("ch was %c, value %d\n", ch, ch);
         ch = getchar();
     }
     exit(EXIT_SUCCESS);
