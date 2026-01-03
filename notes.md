@@ -1,6 +1,6 @@
-# Chapter 1
+## Chapter 1
 
-## Preprocessor Statements
+# Preprocessor Statements
 
 Statements like **#include <stdio.h>** let the pre-processor, which only operates on text, to paste the code that is contained in the file in the "<>" in the file. This is how you use libraries
 
@@ -8,17 +8,17 @@ It can also be used for contant definitions like:
 **#define PI 22.0/7.0**
 What this is doing in the preprocessor is replacing every textual use of PI with the *characters* 22.0/7.0, which then compiles as you'd expect. It's normal to see these constants written in all caps, though not strictly necessary. These are always declared in a single line
 
-## Hosted Environment Conventions
+# Hosted Environment Conventions
 
 External linkage means the function/variable is global; you can use it throughout the program, e.g. library functions
 
 A hosted environment is one with the standard libraries. In a hosted environment, **main()** is a reserved keyword for the main funcion of a program. 
 
-## 
+#
 
 A compound statement is a way of linking together multiple statements, which is created with **{}**, effectively turning them into one statement. You'll often see these after statements like while() or if() if there is more than one statement that should execute in a given condition, or to clear up the following ambiguity with one statement:
 
-## If and While
+# If and While
 
 One thing that's a bit weird is the fact that in:
 
@@ -37,7 +37,7 @@ if(1 > 0){
 else
     statement2
 
-## Function and Variable Declaration
+# Function and Variable Declaration
 
 Before you use a function or variable, you have to tell the compiler that you plan to use it.
 
@@ -74,21 +74,21 @@ Only trigraphs are processed beforehand.
 %c: char
 %f: float
 
-## Function Returns
+# Function Returns
 
 By default, a function returns type int, but variables do not have a default type. Returning a value of 0 means that the function ran successfully. Because this is confusing sometimes, EXIT_FAILURE and EXIT_SUCCESS from <stdlib.h> also works
 
 When the main loop returns, it's the same as the **exit()** command, except exit() can be called from anywhere
 
-## Arithmetic Operations
+# Arithmetic Operations
 
 Division is integer and truncates if both operands are int, otherwise normal. Modulo **%** returns the integer truncated by division
 
-## Input
+# Input
 
 Simplest method is **getchar**, which reads single chars from the input and returns and integer. These integer representations change from system to system so the only thing they are useful for is direct comparison. The only thing that can be reliably infered is that the integer representations of the digits will be consecutive
 
-## Arrays
+# Arrays
 
 When declaring, use the size, but they are 0-indexed
 
@@ -96,13 +96,13 @@ int testArray[5];
 
 firstElement = testArray[0];
 
-## Objects
+# Objects
 
 Things that hold values and functions, both 'objects'
 
-# Chapter 2
+## Chapter 2
 
-## Alphabet
+# Alphabet
 
 Trigraphs are ways of representing some of the symbols that are not presnet in more limited alphabets. 
 
@@ -124,7 +124,7 @@ A byte whos value is zero is always a null character regardless of character set
 
 If you want to use Greek or other charater sets in your program, you have to use the wchar_t type, as other character sets use more than the 8 bits in the char type. You have to include the <stddef.h> header in order to use this type.
 
-## Textual Structure
+# Textual Structure
 
 Space (including tab) can be used for indentation anywhere except in identifies or keywords. Newlines work the same way everywhere except preprocessor command lines, which have a line-by-line structure.
 
@@ -143,13 +143,13 @@ Because it puts a tab character in the string, so it's best to use the string jo
 printf("This is a very very very"
     "very long string\n");
 
-## Comments
+# Comments
 
 /* This is how you right a comment */
 
 and /**/ becomes a space.
 
-## Translation Phases
+# Translation Phases
 
 The most important steps of processing occur in the following order:
 
@@ -158,7 +158,7 @@ The most important steps of processing occur in the following order:
 3. Translate comment to space (but not in strings or character constants). Multiple whitespaces may be condensed (i.e. tab may become space).
 4. Translate the program
 
-## Keywords and Identifiers
+# Keywords and Identifiers
 
 Keywords cannot be used as identifiers, assuming this means mostly variable and function names. None of them have capital letters in them.
 
@@ -171,19 +171,19 @@ continue    for     signed      void
 default     goto    sizeof      volatile
 do          if      static      while
 
-## Identifiers
+# Identifiers
 
 I guess I missed a few identifiers. The others are labels, and the 'tags' of structures, unions, and enums. Identifiers can have numbers, letters, and underscore, but must start with a letter. Identifiers can be more than 31 characters, but only the first 31 are checked for uniqueness -- used <=31 for portability or make sure your long names differ in the first 31 characters.
 
 For the names of external libraries, only the first 6 characters are checked, and capitalization is ignored. Some systems may check for more but it's recommended that you account for 6 character uniqueness in external identifiers for portability.
 
-## Declaration of Variables
+# Declaration of Variables
 
 The only thing that you don't need to name before using are functions that return int. Declarations introduce the name and type but allocates no storage. A definition differs by allocating space. 
 
 variables declared inside functions are definitions unless 'extern' is used
 
-## Exercises
+# Exercises
 
 2.1 Trigraphs are used when you are on a system that doesn't have the whole C alphabet.
 
@@ -203,13 +203,13 @@ variables declared inside functions are definitions unless 'extern' is used
 
 2.9 A definition declares the name, type, and allocates space for an object
 
-## 2.6 Real Types
+# 6. Real Types
 
 The real numbers are float, double, and long double. If the system has more or less capability, then they might all be the same, and C has no way of accessing more. float is supoosed to be small and fast (single), double gives more and long double even more precision. They might be treated the same arithmetically depending on the system, but different types and treated as such. C allows expressions to mix all of the scalar types, including pointers. There are implicit rules for arithmetic conversion that dictate what the output type will be, known as the *usual arithmetic conversions*.
 
 Mixing the real types, when an object is defined as a type, it will cast the value to the specified type. When a lower precision type is in an arithmetic operation with a higher-precision type, the lower prec. object is converted to the higher one. When we put a high precision representation to a lower destination, that behavior is undefined -- you must specify how to round or truncate.
 
-## Exercises
+# Exercises
 
 2.10 I assume the long double can hold the largest range of values
 
@@ -221,7 +221,7 @@ Mixing the real types, when an object is defined as a type, it will cast the val
 
 2.14 There are no guarantees about how a program with undefined behavior will operate.
 
-## Integral Types
+# Integral Types
 
 C doesn't have special types for character manipulation or booleans; both are integral types
 
@@ -229,7 +229,7 @@ C doesn't have special types for character manipulation or booleans; both are in
 
 The two flavours of undecorated integers are the 'signed' int and the unsigned int. There is no guarantee as to the number of bits over 16 that an int can hold, but they work for applications like counters in short loops. <limits.h> details the maximum and minimum values (+-32767) and (0 65535) for signed and unsigned respectively. You HAVE to be thinking about the potential portability and safety of the program.
 
-## Character Variables
+# Character Variables
 
 char is basically another sort of int, but characters do not take up nearly the same amount of range. char has at least 8 bits and can store a value of at least +127, and the minimum value is less than or equal to 0, so the guaranteed range is 0-127. Whether or not char is treated as signed or unsigned int is implementation defined. As a result, it can be used for arithmetic operation.
 
@@ -237,7 +237,7 @@ Character constants are formed by placing a character in single quotes, e.g. 'x'
 
 The only reason that getchar() returns an int is because it also has to hold the newline character, which depending on the implementation might be out of range of char.
 
-## Other Types
+# Other Types
 
 1. signed and unsigned ints
 
@@ -257,13 +257,13 @@ All of the integral types can be printed a signed decimal numbers with %d or %ld
 %ld         decimal signed long
 %lu %lx %lo as above but for long
 
-## 2.8 Expressions and Arithmetic
+# 8. Expressions and Arithmetic
 
 Operators are operations like =, +, * and -. The operand are the variables involved. Most operators in C are either binary and unary, which take two or one operands respectively. Some operators like * have binary and urnary forms, one meaning multiplication, the other denoting a pointer.
 
 Operators may appear consecutively, e.g. x = a+b*(-c); is equivalent to x = a+b*-c; 
 
-## Conversions
+# Conversions
 
 Types can be mixed with conversion happening implicitly. Aside: integral and floaing types are reffered to as arithmetic types, but there are others such as pointers. 
 
@@ -306,7 +306,7 @@ wide character constant: L'c'
 
 If you make a multibyte character constant such as: '°', then its kinda like you wrote: 'xy' -- multiple characters in a constant because the extended character is multibyte. The wide character constant will simply be the repective wchar_t value.
 
-##  Exercises
+# Exercises
 
 2.15 Assuming that chars, ints and longs are respectively 8, 16 and 32 bits long, and that char defaults to unsigned char on a given system, what is the resulting type of expressions involving the following combinations of variables, after the usual arithmetic conversions have been applied?
 
@@ -329,7 +329,7 @@ char x[30];     (char [30]) array of char
 int *ip;        (int *)     pointer to int
 int (*f)();     (int (*)()) pointer to a function returning int
 
-## Operators
+# Operators
 
 1. The multiplicative operators: *, /, %
 
@@ -395,7 +395,7 @@ i. The ++ operator is not defined for floats, as well as the fact that you're no
 
 It's unsafe to use a variable more than once in an expression if the expression changes the variable and the new value could affect the result of the expression.
 
-## Constants
+# Constants
 
 You can put an 'l' or 'L' at the end of an integer to force it to be long. 'u' or 'U' will force it to be unsigned. 
 
@@ -506,7 +506,7 @@ switch(x){
         printf("Not nothing\n");
 }
 
-## More logical expressions
+# More logical expressions
 
 C makes no distinction for logical values. In a control flow, anything other than zero means 'do'. while (a) means: while(a != 0)
 
@@ -516,7 +516,7 @@ if(a&b == c){...
 
 Remember precedence rules. b is compared for equality with c, then the reslut is anded with a.
 
-## Strange operators
+# Strange operators
 
 expression1?expression2:expression3
 
@@ -524,7 +524,7 @@ if expression 1 is true, then the result of the whole expression is expression2,
 
 The types of the expressions and the whole expression.
 
-## Exercises
+# Exercises
 
 1. The type and value of the result of relational values is integer.
 2. The type and value of the logical operators is integer.
@@ -776,4 +776,416 @@ sizeof(char) = 1
 So malloc(10) can hold 10 chars, but malloc(sizeof(int[10])) would be needed to store 10 ints. If malloc can't find enough free space, then a null pointer is returned. stdio.h contains a NULL constant, but a 0 or (void *)0 could be used too.
 
 The fprintf statement takes an extra first argument which says where the output should go: 1. stdout, which is the standard output and 2. stderr, the programs standard error stream
+
+If you want to get the size of array, you are not going to get the correct answer by referencing it by pointer -- you alway have to give the name of the array.
+
+# Type of sizeof
+
+What type does the result of sizeof have? Implementation defined, either unsigned long or unsigned int. Safe thing to do is cast it to unsigned long.
+
+# 6. Pointers to Functions
+
+To make a pointer to a function, start with a declaration as if it were for the function:
+
+int func(int a, float b);
+
+and put an asterisk in front of the name and enclose it in parentheses like so:
+
+int (*func)(int a, float b);
+
+If you don't put parentheses, then you will be declaring a function that returns a pointer to int:
+
+int *func(int a, float b);
+
+A function name collapses into a memory address just like an array, so:
+
+(*func)(1,2); is treated the same as func(1,2);
+
+# 7. Expressions involving pointers
+
+Properly, an object is a piece of dat storage whose contents can be interpretted as a value, therefore a function is not an object. An incomplete type is one whose name and type are known, but whose size is TBD. They arise:
+
+1. By declaring an array like this: int x[];
+2. Declaring a structure or union but not defining its contents
+
+Types can be qualified with const and volatile.
+
+# Conversions
+
+Pointers to void can be convereted any way with pointers to any object or incomplete type. Converting it back gives the same value as the original:
+
+int i;
+int *ip;
+void *vp;
+
+ip = &i;
+vp = ip;
+ip = vp;
+if(ip != &i)
+    printf("Compiler error\n");
+
+An unqualified pointer can be converted to a qualified pointer type, but not vice-versa:
+
+int i;
+int *ip, *const cpi;
+ip = &i;
+cpi = ip;       // permitted
+if(cpi != ip)
+    printf("Compiler error\n");
+ip = cpi;       // not permitted
+
+A null pointer constant will not be equal to a pointer to any object or function.
+
+# Arithmetic
+
+You can add and subtract from any pointer. If you go above or below bounds in an array, then you have over/underflow with undefined result.
+
+Subtracting two compatible pointers from the same array yields type ptrdiff_t which is the number of values separating the two:
+
+int x[100];
+int *pi, *cpi = &x[99]; // cpi points to the last element of x
+
+pi = x;
+if((cpi - pi) != 99)
+    printf("Error\n");
+pi = cpi;
+pi++;                   // increment past the end of x
+if((pi - cpi) != 1)
+    printf("Error\n");
+
+# Relational Expressions
+
+Can compare pointers to compatible types or pointers to compatible incomplete types to each other whether qualified or unqualified.
+
+Pointers pointing to the same thing are equal and vice-versa. Can also use the < if the pointers are in the same array.
+
+# Assignment
+
+Can assign pointers if: lhs is a pointer and rhs is a null pointer constant, assigning value pointer to void, or both pointers are compatible.
+
+Can assight a pointer to int to a pointer to const int (more qualifiers on the left than the right), but cannot assign a pointer ot const int to a pointer to int.
+
+int x = 5;
+const int y = 10;
+
+int *p;
+const int *q;
+
+p = &x;    // fine
+q = &y;    // fine
+q = &x;    // also fine—you can point a "read-only view" at mutable data
+
+p = &y;    // ERROR—you'd be creating a non-const path to const data
+
+If I have a const int * (a pointer through which I promise not to modify the data), I can't assign that to a plain int *, because the plain int * makes no such promise. You'd be "stripping" the protection.
+But going the other way—assigning an int * to a const int *—is fine. You're just saying "I'll treat this as read-only even though I could modify it." Adding restrictions is safe; removing them isn't.
+
+# 8. Arrays, the & operator and function
+
+Except when the operand is sizeof, the name of an array collapses to the address of its first element. When you prefix the name of the array with a &, you are getting the address of the whole array, which has a different type: type pointer to an array of elements of type ___
+
+int ar[10];
+int *ip;
+int (*ar10i)[10];   // pointer to array of 10 ints
+
+ip = ar;            // address of first element
+ip = &ar[0];        // address of first element
+ar10i = &ar;        // address of the whole array
+
+Its not common to use a pointer to all the elements of the array.
+
+int ar2d[5][4];
+int (*ar4i)[4]; // pointer to array of 4 ints
+
+for(ar4i = ar2d; ar4i < &(ar2d[5]); ar4i++)
+    (*ar4i)[2] = 0; // ar2d[n][2] = 0
+
+No matter what array argument is declared to a function, the compiler ends up treating it as a pointer to the array anyway:
+
+void f(int ar[10]);
+void f(int *ar);
+void f(int ar[]);
+
+# Exercises
+
+1. The valid range of indices for an array of 10 objects is 0 through 9.
+2. If you take the address of the 11 member of that 10 element array, that's fine; you can use it for comparison. But you must not try to evaluate it or write to it.
+3. It's valid to compare the values of two pointers when they are pointers to two compatible types in the same array
+4. Onne of the usese of a pointer to void is to give a type-insensitve interface between pointers of different types.
+5. 
+6.
+
+## Chapter 6
+
+To write inside a struct throught a pointer, the -> operator is used. So if we have:
+
+struct student{
+    char name;
+    char major;
+    float gpa;
+    int grad_yr;
+};
+
+Which has a tag student, I can declare an instance of the struct and a pointer to it:
+
+struct student s1, *ps1;
+
+The tag exists in a differnt name space than the variables, so there's nothing wrong with:
+
+struct student student;
+
+Just like in MATLAB, you can access the "fields" of the struct with dot indexing, e.g.:
+
+student.name = "John";
+
+While its legal to pass a struct as an arg to a function, this involves a copy that reference by pointer does not.
+
+If you want to write to a field of a struct through a pointer, this is legal:
+
+(*ps1).name = "John";   // the () needs to be there because '.' has higher prescedence than '*'
+
+But this is the more commonly accepted way:
+
+ps1->name = "John";
+
+If ps1 was qualified with const, then the result would be qualified as well. Basically would just be making it a read-only value, so obviously we can't try to change the value of one of the fields through it:
+
+struct somestruct{
+    int i;
+};
+
+main(){
+    struct somestruct *ssp, s_item;
+    const struct somestruct *cssp;
+
+    s_item.i = 1    // initializing a value to the struct field directly, obviously fine.
+    ssp = &s_item;  // initializing the pointer to the struct
+    ssp->i += 2;    // incrementing a struct field value through a non-qualified pointer, fine.
+    cssp = &s_item; // initializing the const pointer, fine.
+    cssp->i = 0;    // trying to change the struct through a const (read-only) pointer, not fine.
+}
+
+The architecture of some systems have requirements about the alignment of the addresses of various data types in a struct, therefore sometimes 'hole' result.
+
+1. Structure element addresses are in the ascending order of their declaration
+2. There is no padding or hole in front of the first member
+3. Like an array, the address of the structure is the same as the address of its first member (but remember the pointers are different types so a cast has to be used to leverage this), e.g. struct wp_char item; (char *)item == &item.wp_cval;
+4. Bit fields dont have addresses but are packed into units that obey 1-3.
+
+Two basic data structures are linked lists and trees. They have pointers to other structures, usually of the same type. Here's an example declaration:
+
+struct list_ele{
+    int data;
+    struct list_ele *ele_p; // while you can't create a recursive struct, creation of pointers to the current declaration is allowed
+}
+
+The compiler processes the structs before it gets to pointers, so its valid to have an incomplete type like this:
+
+struct list_ele;    // we're simply telling the compiler that this is going to be a thing before the full declaration so that we can create pointers to it
+
+Each structure has its own name space, so different structures can have the same "fields" inside them no problem.
+
+If you declare an incomplete type outside a block and complete the declaration of the structure inside a block, then those are fully different structures. If you want the size of the structure, then its gotta come after the full declaration -- an incomplete type doesn't include the size becasue it could contain anything, unlike a built-in type like an int that has a defined size regardless of what value it will eventually take.
+
+You get an incomplete type just by mentioning a name:
+
+struct abc{ struct xyz *p;};    // the incomplete type 'struct xyz' now declared
+                                // struct containing a pointer to another struct
+struct xyz{ struct abc *p;};    // the incomplete type is now completed
+
+But BEWARE, there's a HORRIBLE, AWFUL, PERILOUS danger:
+
+struct xyz{float x;} var1;
+
+main(){
+    struct abc{ struct xyz *p;}; var2;
+
+    // AAARGHHH - struct xyz REDECLARED!!!
+    struct xyz{ struct abc *p;} var3;
+}
+
+The result is that struct type abc contained in var2 can hold the address of var1, but not of var3 because is a different type (new type xyz). Here's the correct version:
+
+struct xyz{float x;} var1;
+
+main(){
+    struct xyz; // new incomplete type struct 'xyz'
+    struct abc{ struct xyz *p;} var2;
+    struct xyz{ struct abc *p;} var3;
+}
+
+Best practice is just to not have inner struct shadow the name of the outer one. The struct union is complete when the closing } of its declaration is seen, and it must contain at least one member or the behaviour is undefined.
+
+An array without its size is also an incomplete type. It doesn't need to have all the indices populated to be complete.
+
+# Trees
+
+Trees are linked lists with branches. A common type is a binary tree with nodes structured like this:
+
+struct tree_node{
+    int data;
+    sturct tree_node *left_p, *right_p;
+};
+
+The advantage to a tree is that the layout enables binary searching very easily, and its easy to add new nodes.
+
+             root
+               │
+               ▼
+         ┌─────4─────┐
+         │           │
+    left_p         right_p
+         │           │
+         ▼           ▼
+    ┌────2────┐ ┌────6────┐
+    │         │ │         │
+    ▼         ▼ ▼         ▼
+    1         3 5         7
+
+If we want to see if a value x is already in the tree, then the algo is this:
+
+start at the root of the tree
+if the tree is empty (no nodes)
+    return 'failure'
+elseif the data in the current node is equal to the value that we are looking for
+    return 'success'
+else if the data in the current node is greater than the value being searched for
+    then search the branch indicated by the left pointer
+else search the right branch of the tree
+
+When you pass a pointer to a function, you get a copy of the pointer. If you want to modify that pointer, what you need is a pointer to the pointer that you want to modify:
+
+void foo(struct tree_node *p) {
+    p = something_else;  // modifies local copy of pointer p to point now to address something else
+}
+
+main() {
+    struct tree_node *root_p = NULL;    // initializes pointer root_p to null
+    foo(root_p);    // we passed the address NULL here, but we can't modify the pointer root_p
+                    // by pointer here, well, becasue we didn't provide the address of the pointer itself,
+                    // so root_p is still NULL here
+}
+
+# 3. Unions
+
+The same as structs, except replace struct keyword with union. The only exception is that, while with structures, the fields/memgers are allocated as separate, consecutive chunks of storage, in unions, every field is allocated the same piece of storage. 
+
+Sometimes tou wat a sturucture to contain differnt values of different types at different times but to conserve space as much as possible. With a union, you have to keep track of what type you put in it and make sure that you retrieve the right type at the right time. Come back to this if you end up needing it.
+
+# 4. Bitfields
+
+Can only be declared inside strucures and unions and allow basically a custom object of a given number of bits: unsigned field1 :4; // field 4 bits wide
+
+# 5. Enums
+
+Really just to reduce the number of #define statements:
+
+enum e_tag{
+    a, b, c, d=20, e, f, g=20, h
+}var;
+
+The names declared inside the enum are constants with type int:
+
+a == 0
+b == 1
+c == 2
+d == 20
+e == 21
+f == 22
+g == 20
+h == 21
+
+They are better-scoped than define statements because define statements have file scope.
+
+# 6. Qualifiers and derived types
+
+Arrays, structures, and unions contain other types -- none of these can be incomplete -- this is why structures are not recursive -- because its own type is incomplete until the declaration is complete. A pointer to an incomplete type, on the other hand, is itself a complete type. Arrays, structs, and unions do not inheret the qualifiers of any of its elements. However, as struct that contains a const cannot be assigned to.
+
+# 7. Initialization
+
+1. Static duration (compile-time initialization)
+    - Variables declared outside any function (globals)
+    - Variables declared with static or extern inside functions
+    - Can only use constant expressions—values the compiler can compute
+
+2. Automatic duration (run-time initialization)
+    - Local variables inside functions (without static)
+    - Can use any expression, including function calls
+
+
+
+cint global = 100;              // static duration, compile-time
+
+void foo() {
+    static int s = 50;         // static duration, compile-time
+    int local = rand();        // automatic duration, run-time OK
+}
+
+Initializing arrays:
+Use curly braces with comma-separated values:
+
+cint arr[] = {1, 2, 3, 4};      // size inferred as 4
+int arr[10] = {1, 2, 3};       // first 3 initialized, rest are 0
+Strings are special—you can use a literal:
+cchar str[] = "hello";          // includes null terminator, size 6
+char str[5] = "hello";         // NO room for null—legal but dangerous
+Initializing structs:
+cstruct point {
+    int x;
+    int y;
+};
+
+struct point p = {10, 20};     // x=10, y=20
+Nested structures—bracket carefully:
+This is where it gets error-prone. The book strongly recommends full bracketing:
+cstruct outer {
+    int a;
+    struct inner {
+        int b;
+        char c;
+    } in;
+};
+
+// Dangerous—flat list:
+struct outer x = {1, 2, 'a'};
+
+// Safe—fully bracketed:
+struct outer x = {1, {2, 'a'}};
+Same applies to multidimensional arrays:
+cint grid[2][3] = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+Implicit zeroing:
+Objects with static duration that you don't explicitly initialize get zeroed automatically:
+cint global_array[100];         // all zeros, guaranteed
+static int counts[50];         // all zeros, guaranteed
+
+void foo() {
+    int local_array[100];      // GARBAGE—not zeroed
+}
+This is why you'll see C code that relies on globals being zero without explicit initialization—it's guaranteed by the Standard.
+Unions:
+Only the first member can be initialized:
+cunion u {
+    int i;
+    float f;
+};
+
+union u x = {42};              // initializes i, not f
+
+# Exercises:
+
+1. struct {
+    int a, b;
+};
+2. Such a declaration is not super useful becasue you can't make a pointer to it without its type; more than that, you can never reffer to it again.
+3. struct int_struct{
+    int a, b;
+};
+4. struct int_struct z;
+5. p = &z; p->a = 0;
+6. Just by mentioning its name: struct x *p; or not bracking any members after declaring the type: struct x;
+7. The unusual thing about using a string literal is that it automatically populates all the indices of the array.
+8. If a string literal is used to initalize a pointer to character (char *), then the strinng literal collapses down to the address of the first element of the array. I don't know if that is considered unsusual. 
 
