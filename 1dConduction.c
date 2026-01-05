@@ -102,7 +102,6 @@ int main(){
         }
         printf("K\n %f seconds \n", time_elapsed);
         time_elapsed = time_elapsed + DT;
-        // delay(DT); 
         fprintf(fp, "%f", time_elapsed);
         for(int ii = 0; ii < NUM_SEGS; ii++){
             fprintf(fp, ",%f", T[ii]);

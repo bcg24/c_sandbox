@@ -132,7 +132,6 @@ int main() {
         goto cleanup;
     }
 
-    // Reduces
     // https://learn.microsoft.com/en-us/windows/win32/api/audioclient/nf-audioclient-iaudioclient-getdeviceperiod
 
     printf("Device mix format:\n");

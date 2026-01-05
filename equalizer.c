@@ -1,5 +1,6 @@
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
+#define PI 3.14159265358979323846
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,8 +17,6 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 // IID - interface identifier, is a type of GUID
 
-#define PI 3.14159265358979323846
-
 main(){
     HRESULT hr;
     /*
@@ -33,10 +32,11 @@ main(){
     IMMDeviceEnumerator *pEnumerator = NULL;        // Pointer to the IMMDeviceEnumerator interface of a device-enumerator object.
                                                     // Through the IMMDeviceEnumerator interface, the client can obtain references 
                                                     // to the other interfaces in the MMDevice API. 
-
     IMMDevice *pEndpoint = NULL;                    // Pointer to a representation an audio device, initiallized with null
     IAudioClient *pAudioClient = NULL;              //
-    IAudioCaptureClient *pCaptureClient = NULL;
+    IAudioCaptureClient *pCaptureClient = NULL;     // Where we get the actual data from
+    WAVEFORMATEX *pDeviceFormat = NULL;             // Actually a pointer to a WAVEFORMEXTENSIBLE structure -- stores format
+    HANDLE bufferEvent = NULL;
 
     // Initialize COM
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED); 
@@ -57,11 +57,13 @@ main(){
     hr = IMMDeviceEnumerator_GetDefaultAudioEndpoint(pEnumerator, eRender, eMultimedia, &pEndpoint); // https://learn.microsoft.com/en-us/windows/win32/api/mmdeviceapi/nf-mmdeviceapi-immdeviceenumerator-getdefaultaudioendpoint
     /*
     Changed from eConsole to eMultimedia:
-    "eConsole
+    "
+    eConsole
     Value: 0
     Games, system notification sounds, and voice commands.
     eMultimedia
-    Music, movies, narration, and live music recording."
+    Music, movies, narration, and live music recording.
+    "
 
     The default device covered all eRoles in Vista, but this might've changed in Windows 11
 
@@ -96,32 +98,166 @@ main(){
     }
 
     /*
+    Get mix format to see what the device supports
+    Writes the address of a WAVEFORMATEX structure into pDeviceFormat
+    and allocates storage for the structure. The caller is responsible 
+    for freeing the storage, when it is no longer needed, by calling 
+    the CoTaskMemFree function
+
+    The client can call this method before calling the IAudioClient::Initialize 
+    method. When creating a shared-mode stream for an audio endpoint 
+    device, the Initialize method always accepts the stream format 
+    obtained from a GetMixFormat call on the same device.
+
+    The mix format is the format that the audio engine uses internally 
+    for digital processing of shared-mode streams. This format is not 
+    necessarily a format that the audio endpoint device supports. 
+    */
+
+    hr = IAudioClient_GetMixFormat(pAudioClient, &pDeviceFormat);
+    if (FAILED(hr)) {
+        printf("Failed to get mix format: 0x%lx\n", hr);
+        goto cleanup;
+    }
+
+    printf("Capturing in device mix format:\n");
+    printf("  Sample Rate: %lu Hz\n", pDeviceFormat->nSamplesPerSec);
+    printf("  Channels: %d\n", pDeviceFormat->nChannels);
+    printf("  Bits per sample: %d\n", pDeviceFormat->wBitsPerSample);
+
+    /*
     Loopback capture:
     Initialize IAudioClient on the default render enpoint (headphones or speakers)
     with flag AUDCLNT_STREAMFLAGS_LOOPBACK 
+
+    During stream initialization, the client can, as an option, enable event-driven 
+    buffering. To do so, the client calls the IAudioClient::Initialize method with 
+    the AUDCLNT_STREAMFLAGS_EVENTCALLBACK flag set. 
     */
-    hr = IAudioClient_Initialize(pAudioClient,                               //https://learn.microsoft.com/en-us/windows/desktop/api/pAudioClient/nf-pAudioClient-iaudioclient-initialize
+    hr = IAudioClient_Initialize(pAudioClient,
+                                AUDCLNT_SHAREMODE_SHARED,
+                                AUDCLNT_STREAMFLAGS_LOOPBACK,
+                                requestedDuration,
+                                0,
+                                pDeviceFormat,  // Use what we're given
+                                NULL);
+    if (FAILED(hr)) {
+        printf("Failed to initialize audio client: 0x%lx\n", hr);
+        goto cleanup;
+    }
+
+    // Create event for buffer notifications
+    bufferEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (!bufferEvent) {
+        printf("Failed to create buffer event\n");
+        goto cleanup;
+    }
+
+
+    hr = IAudioClient_Initialize(pAudioClient,            //https://learn.microsoft.com/en-us/windows/desktop/api/pAudioClient/nf-pAudioClient-iaudioclient-initialize
                                     AUDCLNT_SHAREMODE_SHARED,
                                     AUDCLNT_STREAMFLAGS_LOOPBACK,
                                     requestedDuration,    // The buffer capacity as a time value
                                     0,                    // Can only be > 0 in exclusive mode
-                                    mixFormat,            // Shares with the audio engine in shared mode
+                                    pDeviceFormat,            // Shares with the audio engine in shared mode
                                     NULL);      
                                     
+
+    if (hr == AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED) {
+        // Get the aligned buffer size
+        hr = IAudioClient_GetBufferSize(pAudioClient, &bufferFrameCount);
+        if (FAILED(hr)) goto cleanup;
+        
+        // Release and recreate
+        IAudioClient_Release(pAudioClient);
+        hr = IMMDevice_Activate(pEndpoint, &IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
+        if (FAILED(hr)) goto cleanup;
+        
+        requestedDuration = (REFERENCE_TIME)((10000000.0 * bufferFrameCount / waveFormat.nSamplesPerSec) + 0.5);
+        
+        hr = IAudioClient_Initialize(pAudioClient,
+                                        AUDCLNT_SHAREMODE_SHARED,
+                                        AUDCLNT_STREAMFLAGS_LOOPBACK,
+                                        requestedDuration,
+                                        0,
+                                        pDeviceFormat,
+                                        NULL);  
+    }
+
+
+    /*
+    After enabling event-driven buffering, and before calling the 
+    IAudioClient::Start method to start the stream, the client 
+    must call SetEventHandle to register the event handle that the 
+    system will signal each time a buffer becomes ready to be processed 
+    by the client
+
+    The SetEventHandle method sets the event handle that the system signals 
+    when an audio buffer is ready to be processed by the client. Requires 
+    prior initialization of the IAudioClient interface.
+    */
+    hr = IAudioClient_SetEventHandle(pAudioClient, bufferEvent);
+    if (FAILED(hr)) {
+        printf("Failed to set event handle: 0x%lx\n", hr);
+        goto cleanup;
+    }
+
     /*
     We need to calculate the bit twidling from the buffer size
-    */
-    hr = IAudioClient_GetBufferSize(pAudioClient, &bufferFrameCount);
-    if (FAILED(hr)) goto cleanup;
-    /*
+    
     To get the size of the allocated buffer, which might be different 
     from the requested size, the client calls the IAudioClient::GetBufferSize method
     */
+    hr = IAudioClient_GetBufferSize(pAudioClient, &bufferFrameCount);
+    if (FAILED(hr)) goto cleanup;
+
 
     hr = IAudioClient_GetService(pAudioClient, &IID_IAudioCaptureClient, (void**)&pCaptureClient);
-    if (FAILED(hr)) goto cleanup;
+        if (FAILED(hr)) {
+        printf("Failed to get capture client: 0x%lx\n", hr);
+        goto cleanup;
+    }
                                     
+    // Start the stream
+    hr = IAudioClient_Start(pAudioClient);
+    if (FAILED(hr)) {
+        printf("Failed to start audio client: 0x%lx\n", hr);
+        goto cleanup;
+    }
 
+    printf("Playing... Press ESC to quit.\n\n");
+
+    while(running){
+        /*
+        Waits until the specified object is in the signaled state or the time-out interval elapses.
+        */
+        DWORD waitResult = WaitForSingleObject(bufferEvent, 100);   // waits for the event instead of continuous polling
+        BYTE *pData;    // points to float samples
+        UINT32 numFramesAvailable;
+        DWORD flags;    // tells us if the device was muted or data loss
+        
+        hr = IAudioCaptureClient_GetBuffer(pCaptureClient, &pData, 
+                                            &numFramesAvailable, &flags, NULL, NULL);
+        if (SUCCEEDED(hr) && numFramesAvailable > 0) {
+            // pData points to float samples (assuming float format)
+            
+            
+            IAudioCaptureClient_ReleaseBuffer(pCaptureClient, numFramesAvailable);
+        }
+    }
+
+
+cleanup:
+    if (bufferEvent) CloseHandle(bufferEvent);
+    if (pCaptureClient) IAudioCaptureClient_Release(pCaptureClient);
+    if (pAudioClient) IAudioClient_Release(pAudioClient);
+    if (pDeviceFormat) CoTaskMemFree(pDeviceFormat);
+    if (pEndpoint) IMMDevice_Release(pEndpoint);
+    if (pEnumerator) IMMDeviceEnumerator_Release(pEnumerator);
+    CoUninitialize();
+
+    printf("Done.\n");
+    return 0;
 }
 
 double complex
