@@ -1,0 +1,30 @@
+So basically what we have is a sound sampled at whatever the sample rate is
+that gives us an fft of equal length
+The DFT is mirrored about the nyquist frequency
+That means that it is trying to read frequencies
+up to one cycle per period, which is very well mighty be alliased
+If our sample rate is 48000 Hz for example, then 10
+seconds of recording would be 480000 samples,
+Therefore, the discrete fourier transform
+has 480000 discrete levels at which it can
+express the frequency composition of the signal
+beteen 0.1 Hz and 48000 Hz, but we have
+to throw the top half out
+
+X_k​=∑(​x_n*​e^(−i2πkn/N), n=0,N−1)
+
+where N is the number of samples, n is the index, and k is the signal number,
+which corresponds to a 
+
+
+We can think of the dft as 
+
+[x_1, x_2, ..., x_n]*[[e^(−i2π0n/N)]', [e^(−i2π1n/N)]', ..., [e^(−i2π(n/N)]'], for
+
+e^(-i*x) = cos(x)+i*sin(x)
+
+k = 0 cycle per seconds
+k = 1 
+
+can identify up to 4 cycles per window
+in the case

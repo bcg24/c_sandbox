@@ -95,22 +95,24 @@ int main() {
     printf("=== WASAPI Exclusive Mode Synth ===\n\n");
 
     // Initialize COM
-    hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    hr = CoInitializeEx(NULL, COINIT_MULTITHREADED); 
     if (FAILED(hr)) {
         printf("Failed to initialize COM: 0x%lx\n", hr);
         return 1;
     }
 
+    // https://learn.microsoft.com/en-us/windows/win32/coreaudio/enumerating-audio-devices
+
     // Create device enumerator
-    hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
-                          &IID_IMMDeviceEnumerator, (void**)&enumerator);
-    if (FAILED(hr)) {
+    hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,      // https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
+                          &IID_IMMDeviceEnumerator, (void**)&enumerator);   // create a device enumerator. A device enumerator is an object with an IMMDeviceEnumerator interface
+    if (FAILED(hr)) {                                                       // The CLSID associated with the data and code that will be used to create the object.
         printf("Failed to create device enumerator: 0x%lx\n", hr);
         goto cleanup;
     }
 
     // Get default audio endpoint
-    hr = IMMDeviceEnumerator_GetDefaultAudioEndpoint(enumerator, eRender, eConsole, &device);
+    hr = IMMDeviceEnumerator_GetDefaultAudioEndpoint(enumerator, eRender, eConsole, &device); // https://learn.microsoft.com/en-us/windows/win32/api/mmdeviceapi/nf-mmdeviceapi-immdeviceenumerator-getdefaultaudioendpoint
     if (FAILED(hr)) {
         printf("Failed to get default audio endpoint: 0x%lx\n", hr);
         goto cleanup;
@@ -124,11 +126,14 @@ int main() {
     }
 
     // Get mix format to see what the device supports
-    hr = IAudioClient_GetMixFormat(audioClient, &mixFormat);
+    hr = IAudioClient_GetMixFormat(audioClient, &mixFormat);    
     if (FAILED(hr)) {
         printf("Failed to get mix format: 0x%lx\n", hr);
         goto cleanup;
     }
+
+    // Reduces
+    // https://learn.microsoft.com/en-us/windows/win32/api/audioclient/nf-audioclient-iaudioclient-getdeviceperiod
 
     printf("Device mix format:\n");
     printf("  Sample Rate: %lu Hz\n", mixFormat->nSamplesPerSec);
@@ -152,7 +157,7 @@ int main() {
     }
 
     // Try exclusive mode first
-    hr = IAudioClient_Initialize(audioClient,
+    hr = IAudioClient_Initialize(audioClient,                               //https://learn.microsoft.com/en-us/windows/desktop/api/Audioclient/nf-audioclient-iaudioclient-initialize
                                   AUDCLNT_SHAREMODE_EXCLUSIVE,
                                   AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                                   requestedDuration,
@@ -189,7 +194,7 @@ int main() {
         hr = IMMDevice_Activate(device, &IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&audioClient);
         if (FAILED(hr)) goto cleanup;
         
-        hr = IAudioClient_Initialize(audioClient,
+        hr = IAudioClient_Initialize(audioClient,                               //https://learn.microsoft.com/en-us/windows/desktop/api/Audioclient/nf-audioclient-iaudioclient-initialize
                                       AUDCLNT_SHAREMODE_SHARED,
                                       AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                                       requestedDuration,
@@ -214,7 +219,7 @@ int main() {
     }
 
     // Get buffer size
-    hr = IAudioClient_GetBufferSize(audioClient, &bufferFrameCount);
+    hr = IAudioClient_GetBufferSize(audioClient, &bufferFrameCount);    //https://learn.microsoft.com/en-us/windows/desktop/api/Audioclient/nf-audioclient-iaudioclient-getbuffersize
     if (FAILED(hr)) {
         printf("Failed to get buffer size: 0x%lx\n", hr);
         goto cleanup;
@@ -284,10 +289,10 @@ int main() {
             framesToWrite = bufferFrameCount - padding;
             
             if (framesToWrite > 0) {
-                hr = IAudioRenderClient_GetBuffer(renderClient, framesToWrite, &bufferData);
+                hr = IAudioRenderClient_GetBuffer(renderClient, framesToWrite, &bufferData);    // https://learn.microsoft.com/en-us/windows/desktop/api/Audioclient/nf-audioclient-iaudiorenderclient-getbuffer
                 if (SUCCEEDED(hr)) {
                     fill_buffer(&data, (float*)bufferData, framesToWrite);
-                    IAudioRenderClient_ReleaseBuffer(renderClient, framesToWrite, 0);
+                    IAudioRenderClient_ReleaseBuffer(renderClient, framesToWrite, 0);   //https://learn.microsoft.com/en-us/windows/desktop/api/Audioclient/nf-audioclient-iaudiorenderclient-releasebuffer
                 }
             }
         }
