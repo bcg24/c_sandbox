@@ -1,6 +1,7 @@
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
-#define PI 3.14159265358979323846
+#define BINS (16)
+#define PI (3.14159265358979323846)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +9,8 @@
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
-#include <blas.h>
+#include <cblas.h>
+#include <math.h>
 
 // __uuidof only works with MSVC
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);    // GUID value attached as attributes to the MMDeviceEnumerator class object
@@ -20,6 +22,9 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 int key_pressed(int vk) {
     return (GetAsyncKeyState(vk) & 0x8000) != 0;
 }
+
+void DFT(double complex *X, float *x, double complex *pW, int frameCount);
+void twiddleTable(double complex *pW, int nSamplesPerSec, int frameCount);
 
 main(){
     HRESULT hr;
@@ -43,8 +48,9 @@ main(){
     UINT32 bufferFrameCount;                        //
     REFERENCE_TIME requestedDuration = 300000;      //
     HANDLE bufferEvent = NULL;
-    enum{frameCount = 1600};
+    enum{frameCount = BINS*100};
     float samples[frameCount], overflow[frameCount], *pSample, *pRead, *pWrite;
+    double complex W[frameCount][frameCount];
 
     // Initialize COM
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED); 
@@ -87,7 +93,7 @@ main(){
     interface's Release method. If the GetDefaultAudioEndpoint call fails, *pEndpoint is NULL.
     */
     if (FAILED(hr)) {
-        printf(stderr, "Failed to get default audio endpoint: 0x%lx\n", hr);
+        fprintf(stderr, "Failed to get default audio endpoint: 0x%lx\n", hr);
         goto cleanup;
     }
 
@@ -101,7 +107,7 @@ main(){
     
     */
     if (FAILED(hr)) {
-        printf(stderr, "Failed to activate audio client: 0x%lx\n", hr);
+        fprintf(stderr, "Failed to activate audio client: 0x%lx\n", hr);
         goto cleanup;
     }
 
@@ -148,7 +154,7 @@ main(){
                                 AUDCLNT_STREAMFLAGS_LOOPBACK,
                                 requestedDuration,
                                 0,
-                                &pDeviceFormat,  // Use what we're given
+                                pDeviceFormat,  // Use what we're given
                                 NULL);
 
     // Create event for buffer notifications
@@ -168,7 +174,7 @@ main(){
         hr = IMMDevice_Activate(pEndpoint, &IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
         if (FAILED(hr)) goto cleanup;
 
-        requestedDuration = (REFERENCE_TIME)((10000000.0 * bufferFrameCount / pDeviceFormat.nSamplesPerSec) + 0.5);
+        requestedDuration = (REFERENCE_TIME)((10000000.0 * bufferFrameCount / pDeviceFormat->nSamplesPerSec) + 0.5);
 
         hr = IAudioClient_Initialize(pAudioClient,
                                         AUDCLNT_SHAREMODE_SHARED,
@@ -201,6 +207,9 @@ main(){
         printf("Failed to get capture client: 0x%lx\n", hr);
         goto cleanup;
     }
+
+    // Maybe calculate the bit twidling here
+    twiddleTable(&W, pDeviceFormat->nSamplesPerSec, frameCount);
                                     
     // Start the stream
     hr = IAudioClient_Start(pAudioClient);
@@ -214,6 +223,7 @@ main(){
     // Initialize the pointers
     pSample = samples;
     pRead = pWrite = overflow;
+    int running = 1;
 
     while(running){
         /*
@@ -307,8 +317,16 @@ main(){
                 memcpy(pSample, pData, numSampRem * sizeof(float));
                 pSample = samples;  // Reset for FFT, sample array now full
                 
-                // TODO: Trigger FFT here
-                
+                // Trigger FFT here
+                double complex X[frameCount];
+                DFT(X, samples, &W[0][0], frameCount);
+                int n = frameCount/BINS;
+                double sumX_bin[BINS];
+                for(int ii = 0; ii < BINS; ii++){
+                    sumX_bin[ii] = cblas_dzasum(n, &X[ii*n], 1);
+                    printf("%f  ", sumX_bin[ii]);
+                }
+                printf("\n");
                 
                 // Put remainder into overflow buffer
                 int remainder = numFramesAvailable - numSampRem;
@@ -351,17 +369,32 @@ cleanup:
     CoUninitialize();
 
     printf("Done.\n");
-    return 0;
+    exit(EXIT_SUCCESS);
 }
 
-double complex
-cmp_exp(int k, int n){
-    double complex z = 1.0 + 2.0*I;
-    double complex w = 3.0 - 4.0*I;
-    double complex product = z * w;  // Just works
-    double re = creal(product);
-    double im = cimag(product);
-
-    double complex twiddle = cexp(-I * 2 * M_PI * k * n / N);
+void DFT(double complex *X, float *x, double complex *pW, int frameCount){
+    double complex alpha = 1.0 + 0.0*I;
+    double complex beta = 0.0 + 0.0*I;
+    double complex ix[frameCount];
+    
+    // Convert real float input to complex double
+    for(int ii = 0; ii < frameCount; ii++){
+        ix[ii] = (double complex)x[ii];
+    }
+    
+    cblas_zgemv(CblasRowMajor, CblasNoTrans, 
+                frameCount, frameCount,
+                &alpha,
+                pW, frameCount,
+                ix, 1,
+                &beta,
+                X, 1);
 }
 
+void twiddleTable(double complex *pW, int nSamplesPerSec, int frameCount){
+    for(int ii = 0; ii < frameCount; ii++){
+        for(int jj = 0; jj < frameCount; jj++){
+            pW[ii * frameCount + jj] = exp((-2*PI*I*ii*jj)/frameCount);
+        }
+    }
+}
