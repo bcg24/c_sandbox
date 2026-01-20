@@ -17,6 +17,10 @@ const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 // IID - interface identifier, is a type of GUID
 
+int key_pressed(int vk) {
+    return (GetAsyncKeyState(vk) & 0x8000) != 0;
+}
+
 main(){
     HRESULT hr;
     /*
@@ -36,7 +40,11 @@ main(){
     IAudioClient *pAudioClient = NULL;              //
     IAudioCaptureClient *pCaptureClient = NULL;     // Where we get the actual data from
     WAVEFORMATEX *pDeviceFormat = NULL;             // Actually a pointer to a WAVEFORMEXTENSIBLE structure -- stores format
+    UINT32 bufferFrameCount;                        //
+    REFERENCE_TIME requestedDuration = 300000;      //
     HANDLE bufferEvent = NULL;
+    enum{frameCount = 1600};
+    float samples[frameCount], overflow[frameCount], *pSample, *pRead, *pWrite;
 
     // Initialize COM
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED); 
@@ -134,34 +142,21 @@ main(){
     buffering. To do so, the client calls the IAudioClient::Initialize method with 
     the AUDCLNT_STREAMFLAGS_EVENTCALLBACK flag set. 
     */
+
     hr = IAudioClient_Initialize(pAudioClient,
                                 AUDCLNT_SHAREMODE_SHARED,
                                 AUDCLNT_STREAMFLAGS_LOOPBACK,
                                 requestedDuration,
                                 0,
-                                pDeviceFormat,  // Use what we're given
+                                &pDeviceFormat,  // Use what we're given
                                 NULL);
-    if (FAILED(hr)) {
-        printf("Failed to initialize audio client: 0x%lx\n", hr);
-        goto cleanup;
-    }
 
     // Create event for buffer notifications
     bufferEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (!bufferEvent) {
         printf("Failed to create buffer event\n");
         goto cleanup;
-    }
-
-
-    hr = IAudioClient_Initialize(pAudioClient,            //https://learn.microsoft.com/en-us/windows/desktop/api/pAudioClient/nf-pAudioClient-iaudioclient-initialize
-                                    AUDCLNT_SHAREMODE_SHARED,
-                                    AUDCLNT_STREAMFLAGS_LOOPBACK,
-                                    requestedDuration,    // The buffer capacity as a time value
-                                    0,                    // Can only be > 0 in exclusive mode
-                                    pDeviceFormat,            // Shares with the audio engine in shared mode
-                                    NULL);      
-                                    
+    }                               
 
     if (hr == AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED) {
         // Get the aligned buffer size
@@ -172,9 +167,9 @@ main(){
         IAudioClient_Release(pAudioClient);
         hr = IMMDevice_Activate(pEndpoint, &IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
         if (FAILED(hr)) goto cleanup;
-        
-        requestedDuration = (REFERENCE_TIME)((10000000.0 * bufferFrameCount / waveFormat.nSamplesPerSec) + 0.5);
-        
+
+        requestedDuration = (REFERENCE_TIME)((10000000.0 * bufferFrameCount / pDeviceFormat.nSamplesPerSec) + 0.5);
+
         hr = IAudioClient_Initialize(pAudioClient,
                                         AUDCLNT_SHAREMODE_SHARED,
                                         AUDCLNT_STREAMFLAGS_LOOPBACK,
@@ -183,7 +178,6 @@ main(){
                                         pDeviceFormat,
                                         NULL);  
     }
-
 
     /*
     After enabling event-driven buffering, and before calling the 
@@ -202,16 +196,6 @@ main(){
         goto cleanup;
     }
 
-    /*
-    We need to calculate the bit twidling from the buffer size
-    
-    To get the size of the allocated buffer, which might be different 
-    from the requested size, the client calls the IAudioClient::GetBufferSize method
-    */
-    hr = IAudioClient_GetBufferSize(pAudioClient, &bufferFrameCount);
-    if (FAILED(hr)) goto cleanup;
-
-
     hr = IAudioClient_GetService(pAudioClient, &IID_IAudioCaptureClient, (void**)&pCaptureClient);
         if (FAILED(hr)) {
         printf("Failed to get capture client: 0x%lx\n", hr);
@@ -227,25 +211,135 @@ main(){
 
     printf("Playing... Press ESC to quit.\n\n");
 
+    // Initialize the pointers
+    pSample = samples;
+    pRead = pWrite = overflow;
+
     while(running){
         /*
         Waits until the specified object is in the signaled state or the time-out interval elapses.
         */
         DWORD waitResult = WaitForSingleObject(bufferEvent, 100);   // waits for the event instead of continuous polling
-        BYTE *pData;    // points to float samples
-        UINT32 numFramesAvailable;
-        DWORD flags;    // tells us if the device was muted or data loss
-        
-        hr = IAudioCaptureClient_GetBuffer(pCaptureClient, &pData, 
-                                            &numFramesAvailable, &flags, NULL, NULL);
-        if (SUCCEEDED(hr) && numFramesAvailable > 0) {
-            // pData points to float samples (assuming float format)
+
+        if(waitResult == WAIT_OBJECT_0){
+            UINT32 numFramesAvailable;
+            BYTE *pData;    // points to samples
+            DWORD flags;    // tells us if the device was muted or data loss
+
+            hr = IAudioCaptureClient_GetBuffer(&pCaptureClient, &pData, 
+                                                &numFramesAvailable, &flags, NULL, NULL);
+
+            /*
+            During each ReleaseBuffer call, the caller reports the number of audio frames that it read from the buffer. 
+            This number must be either the (nonzero) packet size or 0. If the number is 0, then the next GetBuffer call 
+            will present the caller with the same packet as in the previous GetBuffer call.
+
+            If we pass back the same variable, we're saying that we read everything we go
+            */   
+
+            /*
+            The algorithm is as follows:
+            1. On the initial pass, the sample array shouldn't fill up
+            1a. If the array does fill up for some reason, we hop to 5.
+            2. The FFT won't calculate until the array is full
+            3. So we wait until the next iteration
+            4. Fill up the remaining space in the sample array
+            5. Calculate the FFT
+            6. And take what won't fit and put it in the overflow buffer
+            7. On the next pass, put what will fit from the overflow ring buffer in the sample array
+            8. If any of the current audio buffer will fit in the remaining space in the sample array, then 
+            put it in there
+            9. Everything remaining that won't fit goes into the overflow buffer
+            10. The sample array is full so we can calculate the FFT
+            11. Go back to 7
+            */
+           
             
-            
-            IAudioCaptureClient_ReleaseBuffer(pCaptureClient, numFramesAvailable);
+            int numSampRem = &samples[frameCount] - pSample;
+            int readToEnd = &overflow[frameCount] - pRead;
+            int startToWrite = pWrite - overflow;
+            int numUnrdOvflw = (pWrite < pRead) ? (readToEnd + startToWrite) : (pWrite - pRead);
+
+            // === PHASE 1: Drain overflow buffer into sample array ===
+            if (pWrite != pRead) {  // Overflow has unread data
+                if (pWrite < pRead) {  // Write pointer has wrapped
+                    if (numSampRem <= readToEnd) {
+                        // All we need fits before end of overflow buffer
+                        memcpy(pSample, pRead, numSampRem * sizeof(float));
+                        pRead += numSampRem;
+                        pSample += numSampRem;
+                    } else if (numSampRem <= numUnrdOvflw) {
+                        // Need to wrap: copy to end, then from start
+                        memcpy(pSample, pRead, readToEnd * sizeof(float));
+                        pSample += readToEnd;
+                        pRead = overflow;
+                        memcpy(pSample, pRead, (numSampRem - readToEnd) * sizeof(float));
+                        pRead += (numSampRem - readToEnd);
+                        pSample += (numSampRem - readToEnd);
+                    } else {
+                        // Sample array can hold all overflow data
+                        memcpy(pSample, pRead, readToEnd * sizeof(float));
+                        pSample += readToEnd;
+                        pRead = overflow;
+                        memcpy(pSample, pRead, startToWrite * sizeof(float));
+                        pSample += startToWrite;
+                        pRead = pWrite;  // Buffer now empty
+                    }
+                } else {  // Write pointer hasn't wrapped (pWrite >= pRead)
+                    if (numSampRem <= numUnrdOvflw) {
+                        memcpy(pSample, pRead, numSampRem * sizeof(float));
+                        pRead += numSampRem;
+                        pSample += numSampRem;
+                    } else {
+                        memcpy(pSample, pRead, numUnrdOvflw * sizeof(float));
+                        pSample += numUnrdOvflw;
+                        pRead = pWrite;  // Buffer now empty
+                    }
+                }
+            }
+
+            // === PHASE 2: Handle incoming pData ===
+            numSampRem = &samples[frameCount] - pSample;  // Recalculate after overflow drain
+            int writeToEnd = &overflow[frameCount] - pWrite;
+
+            if (numSampRem <= numFramesAvailable) {
+                // Incoming data will fill (or overfill) sample array
+                memcpy(pSample, pData, numSampRem * sizeof(float));
+                pSample = samples;  // Reset for FFT, sample array now full
+                
+                // TODO: Trigger FFT here
+                
+                
+                // Put remainder into overflow buffer
+                int remainder = numFramesAvailable - numSampRem;
+                if (remainder > 0) {
+                    if (remainder >= writeToEnd) {
+                        // Overflow write needs to wrap
+                        memcpy(pWrite, &pData[numSampRem], writeToEnd * sizeof(float));
+                        pWrite = overflow;
+                        memcpy(pWrite, &pData[numSampRem + writeToEnd], (remainder - writeToEnd) * sizeof(float));
+                        pWrite += (remainder - writeToEnd);
+                    } else {
+                        memcpy(pWrite, &pData[numSampRem], remainder * sizeof(float));
+                        pWrite += remainder;
+                    }
+                }
+            } else {
+                // All incoming data fits in sample array
+                memcpy(pSample, pData, numFramesAvailable * sizeof(float));
+                pSample += numFramesAvailable;
+            }
+            if (SUCCEEDED(hr) && numFramesAvailable > 0) {
+                IAudioCaptureClient_ReleaseBuffer(pCaptureClient, numFramesAvailable);
+            }
+        }
+
+        // Poll keyboard
+        if (key_pressed(VK_ESCAPE)) {
+            running = 0;
+            break;
         }
     }
-
 
 cleanup:
     if (bufferEvent) CloseHandle(bufferEvent);
