@@ -244,7 +244,7 @@ main(){
             This number must be either the (nonzero) packet size or 0. If the number is 0, then the next GetBuffer call 
             will present the caller with the same packet as in the previous GetBuffer call.
 
-            If we pass back the same variable, we're saying that we read everything we go
+            If we pass back the same variable, we're saying that we read everything we got
             */   
 
             /*
@@ -323,7 +323,7 @@ main(){
                 int n = frameCount/BINS;
                 double sumX_bin[BINS];
                 for(int ii = 0; ii < BINS; ii++){
-                    sumX_bin[ii] = cblas_dzasum(n, &X[ii*n], 1);
+                    sumX_bin[ii] = cblas_dzasum(n, &X[ii*n], 1);    // Wrong formula
                     printf("%f  ", sumX_bin[ii]);
                 }
                 printf("\n");
@@ -394,7 +394,7 @@ void DFT(double complex *X, float *x, double complex *pW, int frameCount){
 void twiddleTable(double complex *pW, int nSamplesPerSec, int frameCount){
     for(int ii = 0; ii < frameCount; ii++){
         for(int jj = 0; jj < frameCount; jj++){
-            pW[ii * frameCount + jj] = exp((-2*PI*I*ii*jj)/frameCount);
+            pW[ii * frameCount + jj] = cexp((-2*PI*I*ii*jj)/frameCount);
         }
     }
 }
